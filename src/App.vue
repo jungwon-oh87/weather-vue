@@ -1,20 +1,37 @@
 <template>
-  <div id="app">
-    <main>
-      <div class="search-container">
-        <input type="text" class="search-input" placeholder="Enter a city..." />
-      </div>
-      <div class="content-container">
-        <div class="location-container">
-          <div class="location">Irvine, USA</div>
-          <div class="date">Monday 21st Auguest, 2020</div>
+  <div>
+    <div
+      id="app"
+      :class="typeof weather.main != 'undefined' && weather.main.temp > 85 ? 'warm' : ''"
+    >
+      <main>
+        <div class="search-container">
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Enter a city..."
+            v-model="query"
+            @keypress="fetchWeather"
+          />
         </div>
-        <div class="weather-container">
-          <div class="temp">9°c</div>
-          <div class="weather">Rain</div>
+        <div class="content-container" v-if="typeof weather.main != 'undefined'">
+          <div class="location-container">
+            <div class="location">{{weather.name}}, {{weather.sys.country}}</div>
+
+            <!-- <div class="location">{{weather.sys.country}}</div> -->
+            <div class="date">{{getDate()}}</div>
+          </div>
+          <div class="weather-container">
+            <div class="temp">{{Math.round(weather.main.temp)}}°f</div>
+            <div class="weather">{{weather.weather[0].main}}</div>
+          </div>
         </div>
-      </div>
-    </main>
+        <div
+          class="content-container error"
+          v-else-if="typeof weather.main === 'undefined' && this.weather.cod === '404'"
+        >{{this.weather.message}}</div>
+      </main>
+    </div>
   </div>
 </template>
 
@@ -24,7 +41,65 @@ export default {
   data() {
     return {
       api_key: "3427d2595b7499ffd1720796ac1b567f",
+      url_base: "https://api.openweathermap.org/data/2.5/",
+      query: "",
+      weather: {},
     };
+  },
+  methods: {
+    fetchWeather(e) {
+      if (e.key === "Enter") {
+        fetch(
+          `${this.url_base}weather?q=${this.query}&units=imperial&APPID=${this.api_key}`
+        )
+          .then((res) => {
+            return res.json();
+          })
+          .then(this.setResult);
+        this.query = "";
+        console.log("weather main: ", this.weather.main);
+      }
+    },
+    setResult(result) {
+      console.log("result: ", result);
+      this.weather = result;
+      // let d = new Date();
+      // console.log(d.getDay());
+    },
+    getDate() {
+      let d = new Date();
+      let months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+      let days = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ];
+      let month = months[d.getMonth()];
+      let date = d.getDate();
+      let day = days[d.getDay()];
+      let year = d.getFullYear();
+      // console.log("day: ", day);
+      // console.log("month: ", month);
+      // console.log("date: ", d.getDate());
+      return `${day} ${month} ${date}, ${year}`;
+    },
   },
 };
 </script>
@@ -53,6 +128,9 @@ main {
   background-size: cover;
   background-position: bottom;
   transition: 0.4s;
+}
+#app.warm {
+  background-image: url("./assets/warm-bg.jpg");
 }
 
 .search-container {
@@ -87,6 +165,14 @@ main {
 }
 
 .location-container .location {
+  color: #fff;
+  font-size: 32px;
+  font-weight: 500;
+  text-align: center;
+  text-shadow: 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.error {
   color: #fff;
   font-size: 32px;
   font-weight: 500;
